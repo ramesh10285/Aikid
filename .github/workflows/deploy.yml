@@ -7,28 +7,25 @@ on:
       - claude/code-org-ai-game-xcvufy
   workflow_dispatch:
 
-# Permissions needed for the official Pages deploy flow.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment.
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  # Step 1: turn GitHub Pages on (first run only) and build the artifact.
+  # This job has NO `environment:` so it can run even before Pages exists.
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Pages (auto-enables Pages if needed)
+      - name: Enable Pages (auto-enables on first run, no-op afterward)
         uses: actions/configure-pages@v5
         with:
           enablement: true
@@ -38,6 +35,15 @@ jobs:
         with:
           path: "."
 
+  # Step 2: deploy. By now Pages is enabled, so the github-pages
+  # environment resolves correctly.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
