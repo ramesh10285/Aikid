@@ -18,6 +18,28 @@ python3 -m http.server 8000
 ```
 Then visit **http://localhost:8000** in your browser.
 
+## 🌐 Publish it online (GitHub Pages)
+
+To put the site live on the internet for free, do this **one-time** step in the
+GitHub website (it only takes a few clicks — the repo owner has to do it because
+it's a security setting):
+
+1. Go to the repo on GitHub: **https://github.com/ramesh10285/Aikid**
+2. Click **Settings** (top menu) → **Pages** (left sidebar).
+3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+4. Set **Branch** to `claude/code-org-ai-game-xcvufy` and folder to **/(root)**, click **Save**.
+5. Wait ~1 minute, then refresh. GitHub shows the live link at the top:
+
+   **https://ramesh10285.github.io/Aikid/**
+
+That's it — the site is live and updates automatically whenever you push to the branch. 🎉
+
+> Optional (advanced): a GitHub Actions workflow is also included
+> (`.github/workflows/deploy.yml`). If you instead set the Pages **Source** to
+> **GitHub Actions**, you can publish by running that workflow from the
+> **Actions** tab. The "Deploy from a branch" option above is simpler and
+> recommended.
+
 ## 🎮 The four activities
 
 | Activity | What kids do | What they learn |

@@ -1,10 +1,12 @@
 name: Deploy Aikid Academy to GitHub Pages
 
-# Publishes the static site (HTML/CSS/JS) to GitHub Pages on every push.
+# Publishes the static site (HTML/CSS/JS) to GitHub Pages.
+#
+# NOTE: This workflow is OPTIONAL. The easiest way to publish this site is
+# Settings -> Pages -> "Deploy from a branch" (see README), which needs no
+# Actions runner. This workflow is kept as an alternative for when Pages is
+# set to the "GitHub Actions" source; run it manually from the Actions tab.
 on:
-  push:
-    branches:
-      - claude/code-org-ai-game-xcvufy
   workflow_dispatch:
 
 permissions:
