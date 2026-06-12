@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe vs AI — Aikid Academy</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 300px; margin: 16px auto; }
+    .sq {
+      aspect-ratio: 1/1; background: #fff; border-radius: 16px; border: none; cursor: pointer;
+      font-size: 56px; box-shadow: var(--card-shadow); display: flex; align-items: center; justify-content: center;
+    }
+    .sq:hover:not(:disabled) { background: #f3eeff; }
+    .sq.win { background: #d6ffe0; }
+    .sq:disabled { cursor: default; }
+    .result { text-align: center; font-size: 26px; font-weight: bold; min-height: 34px; }
+    .diff { display: flex; gap: 10px; justify-content: center; margin: 6px 0 4px; }
+    .diff button { font-family: inherit; font-weight: bold; font-size: 16px; padding: 8px 16px;
+                   border-radius: 999px; border: 3px solid transparent; cursor: pointer; background: #eee; }
+    .diff button.active { background: var(--purple); color: #fff; }
+    .center { text-align: center; }
+    .score { display:flex; justify-content:center; gap:24px; font-weight:bold; font-size:20px; margin-top:8px;}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="logo">⭕</span>
+    <h1>Tic-Tac-Toe vs AI</h1>
+    <span class="spacer"></span>
+    <a class="home-btn" href="../index.html">🏠 Home</a>
+  </header>
+
+  <main class="wrap">
+    <p class="lead">You are ❌. The robot is ⭕. Get three in a row to win!</p>
+
+    <div class="panel" style="max-width:420px;margin:0 auto;">
+      <div class="diff">
+        <span style="align-self:center;color:#777;">Robot brain:</span>
+        <button data-diff="easy" class="active">😊 Easy</button>
+        <button data-diff="hard">🧠 Hard</button>
+      </div>
+      <div class="center" style="font-size:13px;color:#999;">
+        Easy = the robot sometimes plays randomly. Hard = the robot thinks ahead and never loses!
+      </div>
+
+      <div class="board" id="board"></div>
+      <div class="result" id="result">Your turn! Tap a square.</div>
+
+      <div class="score">
+        <span style="color:var(--blue)">You: <span id="wYou">0</span></span>
+        <span style="color:var(--pink)">Robot: <span id="wAi">0</span></span>
+        <span style="color:#999">Ties: <span id="wTie">0</span></span>
+      </div>
+
+      <div class="center" style="margin-top:14px;">
+        <button class="btn green" id="newBtn">🔄 New Game</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const HUMAN = "❌", AI = "⭕";
+    let board, gameOver, difficulty = "easy";
+    let wins = { you: 0, ai: 0, tie: 0 };
+    const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+    function newGame() {
+      board = Array(9).fill("");
+      gameOver = false;
+      $("result").textContent = "Your turn! Tap a square.";
+      render();
+    }
+
+    function render() {
+      const b = $("board");
+      b.innerHTML = "";
+      board.forEach((v, i) => {
+        const sq = document.createElement("button");
+        sq.className = "sq";
+        sq.textContent = v;
+        sq.disabled = v !== "" || gameOver;
+        sq.onclick = () => humanMove(i);
+        b.appendChild(sq);
+      });
+    }
+
+    function winnerOf(bd) {
+      for (const [a, c, d] of LINES)
+        if (bd[a] && bd[a] === bd[c] && bd[a] === bd[d]) return { who: bd[a], line: [a, c, d] };
+      if (bd.every((x) => x)) return { who: "tie", line: [] };
+      return null;
+    }
+
+    function humanMove(i) {
+      if (gameOver || board[i]) return;
+      board[i] = HUMAN;
+      render();
+      if (checkEnd()) return;
+      setTimeout(aiMove, 350);
+    }
+
+    function aiMove() {
+      let move;
+      const empties = board.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
+      if (difficulty === "easy" && Math.random() < 0.5) {
+        move = empties[Math.floor(Math.random() * empties.length)];
+      } else {
+        move = bestMove();
+      }
+      board[move] = AI;
+      render();
+      checkEnd();
+    }
+
+    // Minimax — the robot plays perfectly
+    function bestMove() {
+      let best = -Infinity, choice = null;
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = AI;
+          const score = minimax(board, 0, false);
+          board[i] = "";
+          if (score > best) { best = score; choice = i; }
+        }
+      }
+      return choice;
+    }
+    function minimax(bd, depth, isMax) {
+      const res = winnerOf(bd);
+      if (res) {
+        if (res.who === AI) return 10 - depth;
+        if (res.who === HUMAN) return depth - 10;
+        return 0;
+      }
+      if (isMax) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) if (!bd[i]) { bd[i] = AI; best = Math.max(best, minimax(bd, depth+1, false)); bd[i] = ""; }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) if (!bd[i]) { bd[i] = HUMAN; best = Math.min(best, minimax(bd, depth+1, true)); bd[i] = ""; }
+        return best;
+      }
+    }
+
+    function checkEnd() {
+      const res = winnerOf(board);
+      if (!res) return false;
+      gameOver = true;
+      render();
+      if (res.who === "tie") {
+        wins.tie++; $("result").textContent = "🤝 It's a tie!"; toast("🤝 Tie game!", "");
+      } else if (res.who === HUMAN) {
+        wins.you++; $("result").textContent = "🎉 You win! Amazing!"; highlight(res.line); toast("🎉 You win!", "win");
+      } else {
+        wins.ai++; $("result").textContent = "🤖 Robot wins! Try again."; highlight(res.line); toast("🤖 Robot wins!", "oops");
+      }
+      $("wYou").textContent = wins.you; $("wAi").textContent = wins.ai; $("wTie").textContent = wins.tie;
+      return true;
+    }
+
+    function highlight(line) {
+      const sqs = $("board").children;
+      line.forEach((i) => sqs[i].classList.add("win"));
+    }
+
+    let toastTimer;
+    function toast(msg, cls) {
+      const t = $("toast");
+      t.textContent = msg; t.className = "toast show " + (cls || "");
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.className = "toast"), 1800);
+    }
+
+    document.querySelectorAll(".diff button[data-diff]").forEach((b) =>
+      b.addEventListener("click", () => {
+        difficulty = b.dataset.diff;
+        document.querySelectorAll(".diff button").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        newGame();
+      })
+    );
+    $("newBtn").onclick = newGame;
+    newGame();
+  </script>
+</body>
+</html>

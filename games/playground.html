@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sprite Playground — Aikid Academy</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .play-layout { display: grid; grid-template-columns: 230px 1fr 230px; gap: 18px; align-items: start; }
+    @media (max-width: 880px) { .play-layout { grid-template-columns: 1fr; } }
+
+    #stage {
+      position: relative; height: 380px; border-radius: 18px; overflow: hidden;
+      background: linear-gradient(#bfe9ff, #e8fff0);
+      box-shadow: inset 0 -30px 0 #c7f0d0;
+    }
+    #sprite {
+      position: absolute; left: 46%; bottom: 20px; font-size: 70px;
+      transition: all 0.3s ease; transform-origin: center bottom;
+    }
+    #bubble {
+      position: absolute; background: #fff; border-radius: 14px; padding: 8px 12px;
+      font-size: 16px; box-shadow: 0 3px 8px #0002; display: none; max-width: 160px;
+    }
+    .toolbox-title { font-weight: bold; font-size: 15px; margin: 6px 0; color: #666; }
+    .block.act { background: var(--pink); }
+    .block.look { background: var(--purple); }
+    .block.sound { background: var(--green); }
+    #script { min-height: 240px; }
+    .program-block { position: relative; }
+    .program-block .del { position: absolute; top: 6px; right: 8px; background: #ffffff66; border: none;
+      border-radius: 50%; width: 22px; height: 22px; cursor: pointer; color: #fff; font-weight: bold; }
+    .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="logo">🐱</span>
+    <h1>Sprite Playground</h1>
+    <span class="spacer"></span>
+    <a class="home-btn" href="../index.html">🏠 Home</a>
+  </header>
+
+  <main class="wrap">
+    <p class="lead">Tap blocks to make a script, then press ▶️ Run and watch the cat go!</p>
+
+    <div class="play-layout">
+      <!-- Toolbox -->
+      <div class="panel">
+        <div class="toolbox-title">🏃 Motion</div>
+        <div class="block act"  data-cmd="right">➡️ Move Right</div>
+        <div class="block act"  data-cmd="left">⬅️ Move Left</div>
+        <div class="block act"  data-cmd="jump">⤴️ Jump</div>
+        <div class="block act"  data-cmd="spin">🔄 Spin</div>
+        <div class="toolbox-title">✨ Looks</div>
+        <div class="block look" data-cmd="grow">🔼 Grow</div>
+        <div class="block look" data-cmd="shrink">🔽 Shrink</div>
+        <div class="block look" data-cmd="color">🌈 New Color</div>
+        <div class="block look" data-cmd="costume">🐶 New Animal</div>
+        <div class="toolbox-title">🔊 Sound &amp; Wait</div>
+        <div class="block sound" data-cmd="say">💬 Say Hi</div>
+        <div class="block sound" data-cmd="meow">🔊 Meow</div>
+        <div class="block sound" data-cmd="wait">⏳ Wait</div>
+      </div>
+
+      <!-- Stage -->
+      <div class="panel">
+        <div id="stage">
+          <div id="bubble"></div>
+          <div id="sprite">🐱</div>
+        </div>
+      </div>
+
+      <!-- Script -->
+      <div class="panel">
+        <div class="toolbox-title">📜 My Script</div>
+        <div class="dropzone" id="script"><div class="placeholder">Tap blocks to add…</div></div>
+        <div class="actions">
+          <button class="btn green" id="runBtn">▶️ Run</button>
+          <button class="btn gray" id="clearBtn">🗑️ Clear</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const sprite = $("sprite");
+    const stage = $("stage");
+    const bubble = $("bubble");
+    let script = [];
+    let running = false;
+
+    const animals = ["🐱", "🐶", "🐸", "🦄", "🐢", "🐥", "🦊", "🐼"];
+    const labels = {
+      right:"➡️ Move Right", left:"⬅️ Move Left", jump:"⤴️ Jump", spin:"🔄 Spin",
+      grow:"🔼 Grow", shrink:"🔽 Shrink", color:"🌈 New Color", costume:"🐶 New Animal",
+      say:"💬 Say Hi", meow:"🔊 Meow", wait:"⏳ Wait"
+    };
+    const klass = {
+      right:"act",left:"act",jump:"act",spin:"act",
+      grow:"look",shrink:"look",color:"look",costume:"look",
+      say:"sound",meow:"sound",wait:"sound"
+    };
+
+    // sprite state
+    let x = 46, size = 70, hue = 0, rot = 0, animal = 0;
+
+    function resetSprite() {
+      x = 46; size = 70; hue = 0; rot = 0; animal = 0;
+      apply();
+    }
+    function apply() {
+      sprite.style.left = x + "%";
+      sprite.style.fontSize = size + "px";
+      sprite.style.filter = `hue-rotate(${hue}deg)`;
+      sprite.style.transform = `rotate(${rot}deg)`;
+      sprite.textContent = animals[animal];
+    }
+
+    function renderScript() {
+      const z = $("script");
+      z.innerHTML = "";
+      if (script.length === 0) { z.innerHTML = '<div class="placeholder">Tap blocks to add…</div>'; return; }
+      script.forEach((cmd, i) => {
+        const el = document.createElement("div");
+        el.className = "block " + klass[cmd] + " program-block";
+        el.innerHTML = "<span>" + labels[cmd] + "</span>";
+        const del = document.createElement("button");
+        del.className = "del"; del.textContent = "✕";
+        del.onclick = () => { script.splice(i, 1); renderScript(); };
+        el.appendChild(del);
+        z.appendChild(el);
+      });
+    }
+
+    // tiny beep using WebAudio (no files needed)
+    function beep(freq, dur) {
+      try {
+        const ac = beep.ac || (beep.ac = new (window.AudioContext || window.webkitAudioContext)());
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = freq; o.type = "triangle";
+        o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(0.15, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.start(); o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function showBubble(text) {
+      bubble.textContent = text;
+      bubble.style.display = "block";
+      bubble.style.left = Math.min(80, x + 8) + "%";
+      bubble.style.bottom = (20 + size) + "px";
+      setTimeout(() => (bubble.style.display = "none"), 900);
+    }
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    async function step(cmd) {
+      switch (cmd) {
+        case "right": x = Math.min(82, x + 12); break;
+        case "left":  x = Math.max(4,  x - 12); break;
+        case "jump":  sprite.style.bottom = "120px"; beep(523,0.15); await sleep(300); sprite.style.bottom = "20px"; break;
+        case "spin":  rot += 360; break;
+        case "grow":  size = Math.min(140, size + 18); break;
+        case "shrink":size = Math.max(34, size - 18); break;
+        case "color": hue = (hue + 60) % 360; break;
+        case "costume": animal = (animal + 1) % animals.length; break;
+        case "say":   showBubble("Hi! 👋"); break;
+        case "meow":  beep(660,0.12); await sleep(120); beep(440,0.18); break;
+        case "wait":  await sleep(500); break;
+      }
+      apply();
+      await sleep(350);
+    }
+
+    async function run() {
+      if (running || script.length === 0) return;
+      running = true;
+      $("runBtn").disabled = true;
+      resetSprite();
+      await sleep(200);
+      for (const cmd of script) await step(cmd);
+      running = false;
+      $("runBtn").disabled = false;
+    }
+
+    document.querySelectorAll(".block[data-cmd]").forEach((b) => {
+      b.addEventListener("click", () => { if (!running) { script.push(b.dataset.cmd); renderScript(); } });
+    });
+    $("runBtn").onclick = run;
+    $("clearBtn").onclick = () => { if (!running) { script = []; renderScript(); resetSprite(); } };
+
+    resetSprite();
+    renderScript();
+  </script>
+</body>
+</html>
